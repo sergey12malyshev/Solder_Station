@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <PID_v1.h>
 
+#define COMMON_CATHODE false // Установить в true для общего катода
+
 // Этот массив содержит сегменты, которые необходимо зажечь для отображения на индикаторе цифр 0-9 
 static uint8_t const digits[] = {
   B00111111, B00000110, B01011011, B01001111, B01100110, B01101101, B01111101, B00000111, B01111111, B01101111
@@ -86,13 +88,13 @@ int main(void)
 
     if (serialEventRun) serialEventRun(); // is loop
   }
-
 }
 
 static void show(int16_t value) 
 {
   int16_t digits_array[] = {0};
   bool empty_most_significant = true;
+
   for (int16_t z = max_digits - 1; z >= 0; z--) // Цикл по всем цифрам
   {
     digits_array[z] = value / pow(10, z); // Теперь берем каждую цифру из числа
@@ -105,17 +107,27 @@ static void show(int16_t value)
     {
       if (!empty_most_significant || z == 0) // Проверить, что это у нас не ведущий ноль, и отобразить текущую цифру
       { 
-        PORTD = ~digits[digits_array[z]]; // Удалить ~ для общего катода
+#if (!COMMON_CATHODE)
+        PORTD = ~digits[digits_array[z]]; // Исключить для общего катода
+#endif
       }
       else
       {
         PORTD = B11111111;
       }
-      digitalWrite(digit_common_pins[z], HIGH);// Изменить на LOW для общего катода
+#if COMMON_CATHODE
+     digitalWrite(digit_common_pins[z], LOW); // LOW для общего катода   
+#else
+     digitalWrite(digit_common_pins[z], HIGH);
+#endif
     } 
     else 
     {
-      digitalWrite(digit_common_pins[z], LOW); // Изменить на HIGH для общего катода
+#if COMMON_CATHODE
+      digitalWrite(digit_common_pins[z], HIGH); // HIGH для общего катода
+#else
+      digitalWrite(digit_common_pins[z], LOW);
+#endif
     }
 
   }
