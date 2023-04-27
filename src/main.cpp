@@ -3,18 +3,18 @@
 #include <PID_v1.h>
 
 // Этот массив содержит сегменты, которые необходимо зажечь для отображения на индикаторе цифр 0-9 
-byte const digits[] = {
+uint8_t const digits[] = {
   B00111111, B00000110, B01011011, B01001111, B01100110, B01101101, B01111101, B00000111, B01111111, B01101111
 };
 
-int digit_common_pins[] = {A3, A4, A5}; // Общие выводы для тройного 7-сегментного светодиодного индикатора
-int max_digits = 3;
-int current_digit = max_digits - 1;
+int16_t digit_common_pins[] = {A3, A4, A5}; // Общие выводы для тройного 7-сегментного светодиодного индикатора
+int16_t max_digits = 3;
+int16_t current_digit = max_digits - 1;
 
-unsigned long updaterate = 500; // Изменяет, как часто обновляется индикатор. Не ниже 500
-unsigned long lastupdate;
+uint32_t updaterate = 500; // Изменяет, как часто обновляется индикатор. Не ниже 500
+uint32_t lastupdate;
 
-int temperature = 0;
+int16_t temperature = 0;
 
 // Определяет переменные, к которым мы подключаемся
 double Setpoint, Input, Output;
@@ -27,12 +27,12 @@ double consKp = 1, consKi = 0.05, consKd = 0.25;
 // Задать ссылки и начальные параметры настройки
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 
-void show(int value); 
+void show(int16_t value); 
 
 void setup()
 {
   DDRD = B11111111;  // установить выводы Arduino с 0 по 7 как выходы
-  for (int y = 0; y < max_digits; y++)
+  for (int16_t y = 0; y < max_digits; y++)
   {
     pinMode(digit_common_pins[y], OUTPUT);
   }
@@ -69,7 +69,7 @@ void loop()
 
   double gap = abs(Setpoint - Input); // Расстояние от установленного значения
 
-  if (gap < 10)
+  if (gap < 10.0)
   { // мы близко к установленному значению, используем консервативные параметры настройки
     myPID.SetTunings(consKp, consKi, consKd);
   }
@@ -86,11 +86,11 @@ void loop()
   show(temperature);
 }
 
-void show(int value) 
+void show(int16_t value) 
 {
-  int digits_array[] = {};
-  boolean empty_most_significant = true;
-  for (int z = max_digits - 1; z >= 0; z--) // Цикл по всем цифрам
+  int16_t digits_array[] = {};
+  bool empty_most_significant = true;
+  for (int16_t z = max_digits - 1; z >= 0; z--) // Цикл по всем цифрам
   {
     digits_array[z] = value / pow(10, z); // Теперь берем каждую цифру из числа
     
