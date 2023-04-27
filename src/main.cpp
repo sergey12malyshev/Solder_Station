@@ -3,18 +3,18 @@
 #include <PID_v1.h>
 
 // Этот массив содержит сегменты, которые необходимо зажечь для отображения на индикаторе цифр 0-9 
-uint8_t const digits[] = {
+static uint8_t const digits[] = {
   B00111111, B00000110, B01011011, B01001111, B01100110, B01101101, B01111101, B00000111, B01111111, B01101111
 };
 
-int16_t digit_common_pins[] = {A3, A4, A5}; // Общие выводы для тройного 7-сегментного светодиодного индикатора
-int16_t max_digits = 3;
-int16_t current_digit = max_digits - 1;
+static int16_t digit_common_pins[] = {A3, A4, A5}; // Общие выводы для тройного 7-сегментного светодиодного индикатора
+static int16_t max_digits = 3;
+static int16_t current_digit = max_digits - 1;
 
-uint32_t updaterate = 500; // Изменяет, как часто обновляется индикатор. Не ниже 500
-uint32_t lastupdate;
+static uint32_t updaterate = 500; // Изменяет, как часто обновляется индикатор. Не ниже 500
+static uint32_t lastupdate;
 
-int16_t temperature = 0;
+static int16_t temperature = 0;
 
 // Определяет переменные, к которым мы подключаемся
 double Setpoint, Input, Output;
@@ -27,7 +27,7 @@ double consKp = 1, consKi = 0.05, consKd = 0.25;
 // Задать ссылки и начальные параметры настройки
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 
-void show(int16_t value); 
+static void show(int16_t value); 
 
 void setup()
 {
@@ -86,7 +86,7 @@ void loop()
   show(temperature);
 }
 
-void show(int16_t value) 
+static void show(int16_t value) 
 {
   int16_t digits_array[] = {};
   bool empty_most_significant = true;
