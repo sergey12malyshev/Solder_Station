@@ -1,5 +1,4 @@
 #include <Arduino.h>
-
 #include <PID_v1.h>
 
 // Этот массив содержит сегменты, которые необходимо зажечь для отображения на индикаторе цифр 0-9 
@@ -19,7 +18,6 @@ static int16_t temperature = 0;
 // Определяет переменные, к которым мы подключаемся
 double Setpoint, Input, Output;
 
-
 // Определяет агрессивные и консервативные параметры настройки
 double aggKp = 4, aggKi = 0.2, aggKd = 1;
 double consKp = 1, consKi = 0.05, consKd = 0.25;
@@ -29,8 +27,11 @@ PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 
 static void show(int16_t value); 
 
-void setup()
+int main(void)
 {
+  init();
+ //initVariant();
+
   DDRD = B11111111;  // установить выводы Arduino с 0 по 7 как выходы
   for (int16_t y = 0; y < max_digits; y++)
   {
@@ -41,54 +42,56 @@ void setup()
   myPID.SetMode(AUTOMATIC);
   lastupdate = millis();
   Setpoint = 0;
-}
 
-
-void loop() 
-{
-  // Прочитать температуру
-  Input = analogRead(0);
-  // Преобразовать 10-битное число в градусы Цельсия
-  Input = map(Input, 0, 303, 25, 350);
-  // Отобразить температуру
-  if (millis() - lastupdate > updaterate) 
+  while(true) 
   {
-    lastupdate = millis();
-    temperature = Input;
-  }
-  // Прочитать установленное значение и преобразовать его в градусы Цельсия (минимум 150, максимум 350)
-  double newSetpoint = analogRead(1);
-  newSetpoint = map(newSetpoint, 0, 1023, 150, 350);
-  // Отобразить установленное значение
-  if (abs(newSetpoint - Setpoint) > 3) 
-  {
-    Setpoint = newSetpoint;
-    temperature = newSetpoint;
-    lastupdate = millis();
+    // Прочитать температуру
+    Input = analogRead(0);
+    // Преобразовать 10-битное число в градусы Цельсия
+    Input = map(Input, 0, 303, 25, 350);
+    // Отобразить температуру
+    if (millis() - lastupdate > updaterate) 
+    {
+      lastupdate = millis();
+      temperature = Input;
+    }
+    // Прочитать установленное значение и преобразовать его в градусы Цельсия (минимум 150, максимум 350)
+    double newSetpoint = analogRead(1);
+    newSetpoint = map(newSetpoint, 0, 1023, 150, 350);
+    // Отобразить установленное значение
+    if (abs(newSetpoint - Setpoint) > 3) 
+    {
+      Setpoint = newSetpoint;
+      temperature = newSetpoint;
+      lastupdate = millis();
+    }
+
+    double gap = abs(Setpoint - Input); // Расстояние от установленного значения
+
+    if (gap < 10.0)
+    { // мы близко к установленному значению, используем консервативные параметры настройки
+      myPID.SetTunings(consKp, consKi, consKd);
+    }
+    else
+    {
+      // мы далеко от установленного значения, используем агрессивные параметры настройки
+      myPID.SetTunings(aggKp, aggKi, aggKd);
+    }
+
+    myPID.Compute();
+    // Управлять выходом
+    analogWrite(11, Output);
+    // Отобразить температуру
+    show(temperature);
+
+    if (serialEventRun) serialEventRun(); // is loop
   }
 
-  double gap = abs(Setpoint - Input); // Расстояние от установленного значения
-
-  if (gap < 10.0)
-  { // мы близко к установленному значению, используем консервативные параметры настройки
-    myPID.SetTunings(consKp, consKi, consKd);
-  }
-  else
-  {
-    // мы далеко от установленного значения, используем агрессивные параметры настройки
-    myPID.SetTunings(aggKp, aggKi, aggKd);
-  }
-
-  myPID.Compute();
-  // Управлять выходом
-  analogWrite(11, Output);
-  // Отобразить температуру
-  show(temperature);
 }
 
 static void show(int16_t value) 
 {
-  int16_t digits_array[] = {};
+  int16_t digits_array[] = {0};
   bool empty_most_significant = true;
   for (int16_t z = max_digits - 1; z >= 0; z--) // Цикл по всем цифрам
   {
