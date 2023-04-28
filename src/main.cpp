@@ -1,9 +1,14 @@
+/*
+* Доработанный проект паяльной станции из хлама
+* https://github.com/sergey12malyshev/Solder_Station
+* Origin: https://www.allaboutcircuits.com/projects/do-it-yourself-soldering-station-with-an-atmega8/
+*/
+
 #include <Arduino.h>
 #include <PID_v1.h>
 
 #define COMMON_CATHODE false // Установить в true для общего катода
 
-/* Массив сегментов цифр 0-9 */
 static uint8_t const digits[] = {
   B00111111, B00000110, B01011011, B01001111, B01100110, B01101101, B01111101, B00000111, B01111111, B01101111
 };
@@ -68,7 +73,7 @@ int main(void)
   init();
  //initVariant();
 
-  DDRD = B11111111;  // установить выводы ATMEGA порта D с 0 по 7 как выходы
+  DDRD = B11111111;  // Установить выводы ATMEGA порта D с 0 по 7 как выходы
   DDRB |= (1 << PINB5); // Установим pb5 на выход
 
   for (int16_t y = 0; y < max_digits; y++)
@@ -127,7 +132,7 @@ static void show(int16_t value)
       if (!empty_most_significant || z == 0) // Проверить, что это у нас не ведущий ноль, и отобразить текущую цифру
       { 
 #if (!COMMON_CATHODE)
-        PORTD = ~digits[digits_array[z]]; // Исключить для общего катода
+        PORTD = ~digits[digits_array[z]];
 #endif
       }
       else
@@ -135,7 +140,7 @@ static void show(int16_t value)
         PORTD = B11111111;
       }
 #if COMMON_CATHODE
-     digitalWrite(digit_common_pins[z], LOW); // LOW для общего катода   
+     digitalWrite(digit_common_pins[z], LOW);
 #else
      digitalWrite(digit_common_pins[z], HIGH);
 #endif
@@ -143,7 +148,7 @@ static void show(int16_t value)
     else 
     {
 #if COMMON_CATHODE
-      digitalWrite(digit_common_pins[z], HIGH); // HIGH для общего катода
+      digitalWrite(digit_common_pins[z], HIGH);
 #else
       digitalWrite(digit_common_pins[z], LOW);
 #endif
@@ -153,6 +158,6 @@ static void show(int16_t value)
   current_digit--;
   if (current_digit < 0)
   {
-    current_digit = max_digits; // Начать сначала
+    current_digit = max_digits;
   }
 }
