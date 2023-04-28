@@ -41,6 +41,11 @@ static double convertReostatData(void)
   return newSetpoint;
 }
 
+static inline void heratbeatLed(void)
+{
+  PORTB ^=(1UL << PINB5);
+}
+
 static void regulator(void)
 {
   double gap = abs(Setpoint - Input); // Расстояние от установленного значения
@@ -64,6 +69,8 @@ int main(void)
  //initVariant();
 
   DDRD = B11111111;  // установить выводы ATMEGA порта D с 0 по 7 как выходы
+  DDRB |= (1 << PINB5); // Установим pb5 на выход
+
   for (int16_t y = 0; y < max_digits; y++)
   {
     pinMode(digit_common_pins[y], OUTPUT);
@@ -77,16 +84,18 @@ int main(void)
   while(true) 
   {
     convertThermocoupleData();
-    /* Отобразить температуру */ 
-    if (millis() - lastupdate > updaterate) 
+     
+    if (millis() - lastupdate > updaterate)  /* Отобразить температуру */
     {
       lastupdate = millis();
-      temperature = Input;
+      temperature = Input; 
+      heratbeatLed();
     }
+
     double newSetpoint = convertReostatData();
     double change  = abs(newSetpoint - Setpoint);
-    /* Отобразить установленное значение, если было изменение */ 
-    if (change > 3) 
+
+    if (change > 3)   /* Отобразить установленное значение, если было изменение */ 
     {
       Setpoint = newSetpoint;
       temperature = newSetpoint;
