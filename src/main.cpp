@@ -1,38 +1,82 @@
-#include <Arduino.h>
+/*
+* Доработанный проект паяльной станции из хлама
+* https://github.com/sergey12malyshev/Solder_Station
+* Origin: https://www.allaboutcircuits.com/projects/do-it-yourself-soldering-station-with-an-atmega8/
+*/
 
+#include <Arduino.h>
 #include <PID_v1.h>
 
-// Этот массив содержит сегменты, которые необходимо зажечь для отображения на индикаторе цифр 0-9 
-byte const digits[] = {
+#define COMMON_CATHODE false // Установить в true для общего катода
+
+static uint8_t const digits[] = {
   B00111111, B00000110, B01011011, B01001111, B01100110, B01101101, B01111101, B00000111, B01111111, B01101111
 };
 
-int digit_common_pins[] = {A3, A4, A5}; // Общие выводы для тройного 7-сегментного светодиодного индикатора
-int max_digits = 3;
-int current_digit = max_digits - 1;
+static int16_t digit_common_pins[] = {A3, A4, A5}; // Общие выводы для тройного 7-сегментного светодиодного индикатора
+static int16_t max_digits = 3;
+static int16_t current_digit = max_digits - 1;
 
-unsigned long updaterate = 500; // Изменяет, как часто обновляется индикатор. Не ниже 500
-unsigned long lastupdate;
+static uint32_t updaterate = 500; // Изменяет, как часто обновляется индикатор. Не ниже 500
+static uint32_t lastupdate;
 
-int temperature = 0;
+static int16_t temperature = 0;
 
-// Определяет переменные, к которым мы подключаемся
-double Setpoint, Input, Output;
+double Setpoint, Input, Output; // Определяет переменные, к которым мы подключаемся
 
-
-// Определяет агрессивные и консервативные параметры настройки
+/* Определяет агрессивные и консервативные параметры настройки */ 
 double aggKp = 4, aggKi = 0.2, aggKd = 1;
 double consKp = 1, consKi = 0.05, consKd = 0.25;
 
-// Задать ссылки и начальные параметры настройки
-PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
+PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT); // Задать ссылки и начальные параметры настройки
 
-void show(int value); 
+static void show(int16_t value); 
 
-void setup()
+static void convertThermocoupleData(void)
 {
-  DDRD = B11111111;  // установить выводы Arduino с 0 по 7 как выходы
-  for (int y = 0; y < max_digits; y++)
+  const uint16_t measured = 303; // Измеренное значение при калибровке (Уже подстроил под свою конструкцию)
+  Input = analogRead(0);  // Прочитать температуру
+  Input = map(Input, 0, measured, 25, 350); // Преобразовать 10-битное число в градусы Цельсия
+}
+
+static double convertReostatData(void)
+{  
+  double newSetpoint = analogRead(1); // Прочитать установленное значение потенциометром
+  newSetpoint = map(newSetpoint, 0, 1023, 150, 350); // и преобразовать его в градусы Цельсия (минимум 150, максимум 350)
+  return newSetpoint;
+}
+
+static inline void heratbeatLed(void)
+{
+  PORTB ^=(1UL << PINB5);
+}
+
+static void regulator(void)
+{
+  double gap = abs(Setpoint - Input); // Расстояние от установленного значения
+
+  if (gap < 10.0)
+  { // мы близко к установленному значению, используем консервативные параметры настройки
+      myPID.SetTunings(consKp, consKi, consKd);
+  }
+  else
+  {
+    // мы далеко от установленного значения, используем агрессивные параметры настройки
+    myPID.SetTunings(aggKp, aggKi, aggKd);
+  }
+  myPID.Compute();
+  analogWrite(11, Output); // Уcтановить PWM
+}
+
+int main(void)
+{
+  init();
+ //initVariant();
+
+  DDRD = B11111111;  // Установить выводы ATMEGA порта D с 0 по 7 как выходы
+  DDRB |= (1 << PINB5); // Установим pb5 на выход
+
+  for (int16_t y = 0; y < max_digits; y++)
   {
     pinMode(digit_common_pins[y], OUTPUT);
   }
@@ -41,56 +85,41 @@ void setup()
   myPID.SetMode(AUTOMATIC);
   lastupdate = millis();
   Setpoint = 0;
+
+  while(true) 
+  {
+    convertThermocoupleData();
+     
+    if (millis() - lastupdate > updaterate)  /* Отобразить температуру */
+    {
+      lastupdate = millis();
+      temperature = Input; 
+      heratbeatLed();
+    }
+
+    double newSetpoint = convertReostatData();
+    double change  = abs(newSetpoint - Setpoint);
+
+    if (change > 3)   /* Отобразить установленное значение, если было изменение */ 
+    {
+      Setpoint = newSetpoint;
+      temperature = newSetpoint;
+      lastupdate = millis();
+    }
+    regulator(); // Запустим регулятор
+    
+    show(temperature); // Отобразить температуру на индикаторе
+
+    if (serialEventRun) serialEventRun(); // is loop
+  }
 }
 
-
-void loop() 
+static void show(int16_t value) 
 {
-  // Прочитать температуру
-  Input = analogRead(0);
-  // Преобразовать 10-битное число в градусы Цельсия
-  Input = map(Input, 0, 303, 25, 350);
-  // Отобразить температуру
-  if (millis() - lastupdate > updaterate) 
-  {
-    lastupdate = millis();
-    temperature = Input;
-  }
-  // Прочитать установленное значение и преобразовать его в градусы Цельсия (минимум 150, максимум 350)
-  double newSetpoint = analogRead(1);
-  newSetpoint = map(newSetpoint, 0, 1023, 150, 350);
-  // Отобразить установленное значение
-  if (abs(newSetpoint - Setpoint) > 3) 
-  {
-    Setpoint = newSetpoint;
-    temperature = newSetpoint;
-    lastupdate = millis();
-  }
+  int16_t digits_array[] = {0};
+  bool empty_most_significant = true;
 
-  double gap = abs(Setpoint - Input); // Расстояние от установленного значения
-
-  if (gap < 10)
-  { // мы близко к установленному значению, используем консервативные параметры настройки
-    myPID.SetTunings(consKp, consKi, consKd);
-  }
-  else
-  {
-    // мы далеко от установленного значения, используем агрессивные параметры настройки
-    myPID.SetTunings(aggKp, aggKi, aggKd);
-  }
-
-  myPID.Compute();
-  // Управлять выходом
-  analogWrite(11, Output);
-  // Отобразить температуру
-  show(temperature);
-}
-
-void show(int value) 
-{
-  int digits_array[] = {};
-  boolean empty_most_significant = true;
-  for (int z = max_digits - 1; z >= 0; z--) // Цикл по всем цифрам
+  for (int16_t z = max_digits - 1; z >= 0; z--) // Цикл по всем цифрам
   {
     digits_array[z] = value / pow(10, z); // Теперь берем каждую цифру из числа
     
@@ -102,23 +131,33 @@ void show(int value)
     {
       if (!empty_most_significant || z == 0) // Проверить, что это у нас не ведущий ноль, и отобразить текущую цифру
       { 
-        PORTD = ~digits[digits_array[z]]; // Удалить ~ для общего катода
+#if (!COMMON_CATHODE)
+        PORTD = ~digits[digits_array[z]];
+#endif
       }
       else
       {
         PORTD = B11111111;
       }
-      digitalWrite(digit_common_pins[z], HIGH);// Изменить на LOW для общего катода
+#if COMMON_CATHODE
+     digitalWrite(digit_common_pins[z], LOW);
+#else
+     digitalWrite(digit_common_pins[z], HIGH);
+#endif
     } 
     else 
     {
-      digitalWrite(digit_common_pins[z], LOW); // Изменить на HIGH для общего катода
+#if COMMON_CATHODE
+      digitalWrite(digit_common_pins[z], HIGH);
+#else
+      digitalWrite(digit_common_pins[z], LOW);
+#endif
     }
 
   }
   current_digit--;
   if (current_digit < 0)
   {
-    current_digit = max_digits; // Начать сначала
+    current_digit = max_digits;
   }
 }
