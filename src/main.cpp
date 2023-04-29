@@ -2,18 +2,14 @@
 * Доработанный проект паяльной станции из хлама
 * https://github.com/sergey12malyshev/Solder_Station
 * Origin: https://www.allaboutcircuits.com/projects/do-it-yourself-soldering-station-with-an-atmega8/
+* Version: 1.1.0
 */
 #include <Arduino.h>
 #include <PID_v1.h>
 
 #define COMMON_CATHODE false // Установить в true для общего катода
 
-static uint8_t const digits[] = {
-  B00111111, B00000110, B01011011, B01001111, B01100110, B01101101, B01111101, B00000111, B01111111, B01101111,\
-  B01000000 /*-*/
-};
-
-enum Modes {WORK, NO_SOLDER, ERROR};
+enum Modes {WORK, NO_SOLDER};
 Modes mode = WORK;
 
 static int16_t digit_common_pins[] = {A3, A4, A5}; // Общие выводы для тройного 7-сегментного светодиодного индикатора
@@ -25,11 +21,11 @@ static uint32_t lastupdate;
 
 static int16_t temperature = 0;
 
-double Setpoint, Input, Output; // Определяет переменные, к которым мы подключаемся
-
-/* Определяет агрессивные и консервативные параметры настройки */ 
+/* Определяет агрессивные и консервативные параметры настройки ПИД-регулятора */ 
 double aggKp = 4, aggKi = 0.2, aggKd = 1;
 double consKp = 1, consKi = 0.05, consKd = 0.25;
+
+double Setpoint, Input, Output;
 
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT); // Задать ссылки и начальные параметры настройки
 
@@ -52,6 +48,11 @@ static double convertReostatData(void)
 static inline void heratbeatLed(void)
 {
   PORTB ^=(1UL << PINB5);
+}
+
+static inline void disablePWM(void)
+{
+  analogWrite(11, 0);
 }
 
 static void regulator(void)
@@ -83,8 +84,8 @@ int main(void)
   {
     pinMode(digit_common_pins[y], OUTPUT);
   }
-  // Мы не хотим разогревать паяльник на 100%, т.к. это может сжечь его, поэтому устанавливаем максимум на 85% (220/255)
-  myPID.SetOutputLimits(0, 220);
+
+  myPID.SetOutputLimits(0, 220); // Устанавливаем ограничение мощности максимум на 85% (220/255)
   myPID.SetMode(AUTOMATIC);
   lastupdate = millis();
   Setpoint = 0;
@@ -113,13 +114,13 @@ int main(void)
     /* Автомат состояний */ 
     if (temperature <= 380)
     {
-      regulator(); // Запустим регулятор
-      show(temperature, WORK); // Отобразить температуру на индикаторе
+      regulator();
+      show(temperature, WORK);
     }
     else
     {
       show(temperature, NO_SOLDER); // Отобразим аварию (перегрев или отсутсвие паяльника)
-      analogWrite(11, 0); // Отключим PWM
+      disablePWM();
     }
 
     if (serialEventRun) serialEventRun(); // is loop
@@ -128,6 +129,11 @@ int main(void)
 
 static void show(int16_t value, Modes workMode) 
 {
+  uint8_t const digits[] = {
+    B00111111, B00000110, B01011011, B01001111, B01100110, B01101101, B01111101, B00000111, B01111111, B01101111,\
+    B01000000 /*- no soldering-iron symbol*/
+  };
+  const uint8_t noSolderingIronSymbol = 10u;// ---
   int16_t digits_array[] = {0};
   bool empty_most_significant = true;
 
@@ -139,7 +145,7 @@ static void show(int16_t value, Modes workMode)
     }
     else if(workMode == NO_SOLDER)
     {
-     digits_array[z] = 10; // ---
+     digits_array[z] = noSolderingIronSymbol; 
     }
     
     if (digits_array[z] != 0 ) 
