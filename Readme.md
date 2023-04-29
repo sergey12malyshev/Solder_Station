@@ -7,8 +7,9 @@
 USBISP(USBASP) + Khazama AVR Programmer
 
 ## Hardware
-- Atmega8a
-- LM358
+- МК Atmega8a
+- ОУ LM358
+- Индикатор BA56-12SRWA
 
 ## Полезная информация
 Исходник: https://www.allaboutcircuits.com/projects/do-it-yourself-soldering-station-with-an-atmega8/
