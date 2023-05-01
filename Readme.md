@@ -13,6 +13,9 @@ USBISP(USBASP) + Khazama AVR Programmer
 - ОУ LM358
 - Индикатор BA56-12SRWA
 
+<img src= "https://github.com/sergey12malyshev/Solder_Station/blob/develop/image/work.jpg" width=30% height=30%> <img src= "https://github.com/sergey12malyshev/Solder_Station/blob/develop/image/noSolder.jpg" width=30% height=30%>
+<img src= "https://github.com/sergey12malyshev/Solder_Station/blob/develop/image/hard.jpg" width=40% height=40%>
+
 ## Полезная информация
 Исходник: https://www.allaboutcircuits.com/projects/do-it-yourself-soldering-station-with-an-atmega8/
 
