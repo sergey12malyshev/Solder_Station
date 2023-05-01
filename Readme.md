@@ -1,8 +1,10 @@
 Проект паяльной станции на микроконтроллере Atmega8a из хлама
 
+Проведен рефакторинг (привел типы данных и функции к классическому СИ), добавлен режим индикации NO_SOLDER при отсутсвии или неисправности паяльника, добавлен heartbeet-светодиод
 ## Инструментарий
 *PlatformIO* + *VS Code*
 
+Настройка: https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/
 ## Прошивка ПО
 USBISP(USBASP) + Khazama AVR Programmer
 

@@ -78,7 +78,7 @@ int main(void)
  //initVariant();
 
   DDRD = B11111111;  // Установить выводы ATMEGA порта D с 0 по 7 как выходы
-  DDRB |= (1 << PINB5); // Установим pb5 на выход
+  DDRB |= (1UL << PINB5); // Установим pb5 на выход
 
   for (int16_t y = 0; y < max_digits; y++)
   {
