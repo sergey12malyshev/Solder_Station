@@ -1,6 +1,11 @@
 Проект паяльной станции на микроконтроллере Atmega8a из хлама
 
-Проведен рефакторинг (привел типы данных и функции к классическому СИ), добавлен режим индикации NO_SOLDER при отсутсвии или неисправности паяльника, добавлен heartbeet-светодиод
+За основу взят готовый проект. Проведен рефакторинг (привел типы данных и функции к классическому Си), добавлен режим индикации NO_SOLDER при отсутсвии или неисправности паяльника, добавлен heartbeet-светодиод.
+
+The project of a soldering station on the Atmega8a microcontroller from the trash
+
+Refactoring was carried out (brought data types and functions to classical C), NO_SOLDER indication mode was added when a soldering iron is missing or entered, a Heartbeat LED was added.
+
 ## Инструментарий
 *PlatformIO* + *VS Code*
 
