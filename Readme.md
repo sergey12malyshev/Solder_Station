@@ -9,7 +9,7 @@
 USBISP(USBASP) + Khazama AVR Programmer
 
 ## Hardware
-- МК Atmega8a
+- МК Atmega8a 16MHz, 1KB RAM, 8KB Flash
 - ОУ LM358
 - Индикатор BA56-12SRWA
 
