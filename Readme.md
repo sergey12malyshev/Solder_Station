@@ -10,8 +10,8 @@ Configuring the development environment: https://randomnerdtutorials.com/vs-code
 USBISP(USBASP) HW programmer + Khazama AVR SW Programmer
 
 ## Hardware
-- МК Atmega8a 16MHz, 1KB RAM, 8KB Flash
-- ОУ LM358
+- Microcontroller Atmega8a 16MHz, 1KB RAM, 8KB Flash
+- Operational amplifier LM358
 - Indicator BA56-12SRWA
 
 <img src= "https://github.com/sergey12malyshev/Solder_Station/blob/develop/image/work.jpg" width=30% height=30%> <img src= "https://github.com/sergey12malyshev/Solder_Station/blob/develop/image/noSolder.jpg" width=30% height=30%>
@@ -20,4 +20,6 @@ USBISP(USBASP) HW programmer + Khazama AVR SW Programmer
 ## Useful information
 The original project: https://www.allaboutcircuits.com/projects/do-it-yourself-soldering-station-with-an-atmega8/
 
+## About repo
+Work in the repository is carried out through the Git-flow branching model
 
